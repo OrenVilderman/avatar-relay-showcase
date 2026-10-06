@@ -2,11 +2,11 @@
 
 > **An AI digital twin portfolio system built to demonstrate backend engineering, AI integration, reliability, and recruiter-focused UX.**
 
-[![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk&logoColor=white)](https://www.oracle.com/java/
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.1-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![Angular 22](https://img.shields.io/badge/Angular-22-DD0031?logo=angular&logoColor=white)](https://angular.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Groq](https://img.shields.io/badge/LLM-Groq-111111)](https://groq.com/)
+[![Java 21](https://shields.io)](https://oracle.com)
+[![Spring Boot](https://shields.io)](https://spring.io)
+[![Angular 22](https://shields.io)](https://angular.dev)
+[![TypeScript](https://shields.io)](https://typescriptlang.org)
+[![Groq](https://shields.io)](https://groq.com)
 
 ## Source code and IP
 
@@ -82,32 +82,36 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     autonumber
-    participant R as Recruiter
-    participant A as Angular App
-    participant B as Spring Boot API
-    participant G as Groq
-    participant S as Reply Store
-    participant P as Avatar Provider
-
-    R->>A: Text or voice question
-    A->>B: POST /api/chat
-    B->>B: Validate + rate limit
-    B->>G: Classify intent
-    G-->>B: Structured intent
-    B->>S: Resolve canonical reply
-    S-->>B: replyId + deterministic response
-    B-->>A: replyId + reply
-
-    A->>B: POST /api/videos(replyId)
-    B->>S: Resolve server-owned text
-    S-->>B: Canonical reply
-    B->>P: Create video job
-    P-->>B: Job status
-
-    loop Poll until terminal state
-        A->>B: GET /api/videos/{videoId}
-        B-->>A: QUEUED / RENDERING / DONE / FAILED
+    actor Recruiter
+    participant App as Angular App
+    box rgb(30, 41, 59), "Spring Boot API (Java 21)"
+        participant PT as Platform Carrier Thread (OS)
+        participant VT as Virtual Thread (Project Loom)
+        participant Store as In-Memory Reply Store
     end
+    participant Groq as Groq API (External LLM)
+
+    Recruiter->>App: Text or voice question (STT completed in browser)
+    App->>App: Sanitize & normalize transcript
+    App->>+PT: POST /api/chat (HTTP Request)
+    
+    Note over PT, VT: [Java 21 Optimization] Mounts light Virtual Thread
+    PT->>+VT: Hands off request execution
+    PT-->>-App: [OS Thread Released] Immediately free to handle next client HTTP requests
+    
+    VT->>VT: Validate request + Apply Rate Limit
+    VT->>+Groq: POST /chat/completions (Blocking I/O Call)
+    
+    Note over VT, Groq: VT is unmounted while waiting. 0 MB OS memory wasted.
+    Groq-->>-VT: Returns Structured Intent JSON (e.g., EXPERIENCE)
+    
+    VT->>VT: FallbackResponsePolicy (Apply defensive token checking)
+    VT->>Store: Resolve canonical reply from context
+    Store-->>VT: replyId + portfolio response text
+    
+    VT->>+PT: Re-mounts to complete response
+    PT-->>-App: HTTP 200: JSON Response (replyId + reply)
+    deactivate VT
 ```
 
 ## Key engineering features
@@ -127,7 +131,12 @@ The voice path is designed around real browser speech-recognition failure modes 
 
 The goal is a voice interaction that remains predictable even when speech recognition is imperfect.
 
-### 2. Bounded LLM responsibility
+### 2. High-throughput I/O concurrency (Java 21 Virtual Threads)
+The backend architecture scales per-instance concurrency efficiently under I/O-heavy workloads by utilizing Java 21 Virtual Threads (`spring.threads.virtual.enabled=true`).
+- Rather than tying up heavy operating-system platform threads (which consume ~1MB each) while waiting for slow external AI API calls (Groq), the application immediately unmounts the virtual thread during the blocking network I/O window.
+- This decouples the concurrent request capacity from the server's raw memory limitations, allowing the production deployment to handle high-concurrency recruiter chat flows cleanly on resource-constrained cloud infrastructure (Render instances capped at 512MB RAM).
+
+### 3. Bounded LLM responsibility
 
 The model is intentionally not the source of truth for the candidate's profile.
 
@@ -142,7 +151,7 @@ For recruiter chat, the LLM classifies intent while the application resolves the
 
 For Job Matcher, the model analyzes the Job Description but the CV remains the trusted source for claims about Oren's skills and experience.
 
-### 3. Job Matcher resilience
+### 4. Job Matcher resilience
 
 Recruiter Job Descriptions are untrusted and often long, messy, or unexpectedly formatted.
 
@@ -179,7 +188,7 @@ The application validates the response envelope before accepting it:
 
 Invalid categories, invalid CTA actions, malformed JSON, empty model responses, missing fields, or invalid scores are recovery events rather than silently accepted data.
 
-### 4. Server-owned avatar text
+### 5. Server-owned avatar text
 
 The browser does not submit arbitrary video text.
 
@@ -187,7 +196,7 @@ The frontend submits a server-generated `replyId`, and the backend resolves the 
 
 This keeps the avatar layer aligned with the same controlled response that was shown to the recruiter.
 
-### 5. Failure-aware integrations
+### 6. Failure-aware integrations
 
 External providers are treated as unreliable infrastructure.
 
@@ -206,7 +215,7 @@ Handled failure classes include:
 
 The application uses bounded retries, fallback models, validation and deterministic degradation where appropriate.
 
-### 6. Testing rigor
+### 7. Testing rigor
 
 Testing is designed around the actual failure surface, not only the happy path.
 

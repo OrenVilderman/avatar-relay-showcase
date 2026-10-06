@@ -91,14 +91,14 @@ sequenceDiagram
     end
     participant Groq as Groq API (External LLM)
 
-    Recruiter->>App: Text or voice question (STT completed in browser)
+    Recruiter->>App: Voice Question (STT completed in browser)
     App->>App: Sanitize & normalize transcript
     App->>+PT: POST /api/chat (HTTP Request)
     
     Note over PT, VT: [Java 21 Optimization] Mounts light Virtual Thread
     PT->>+VT: Hands off request execution
-    PT-->>-App: [OS Thread Released] Immediately free to handle next client HTTP requests
-    
+    PT-->>-App: [OS Thread Released] Immediately free to handle next client HTTP requests!
+
     VT->>VT: Validate request + Apply Rate Limit
     VT->>+Groq: POST /chat/completions (Blocking I/O Call)
     
@@ -107,11 +107,12 @@ sequenceDiagram
     
     VT->>VT: FallbackResponsePolicy (Apply defensive token checking)
     VT->>Store: Resolve canonical reply from context
-    Store-->>VT: replyId + portfolio response text
+    Store-->>VT: replyId + deterministic portfolio response
     
     VT->>+PT: Re-mounts to complete response
     PT-->>-App: HTTP 200: JSON Response (replyId + reply)
     deactivate VT
+
 ```
 
 ## Key engineering features

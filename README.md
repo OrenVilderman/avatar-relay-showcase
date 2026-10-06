@@ -243,7 +243,7 @@ Automated tests do not depend on live Groq or live D-ID execution. The avatar pr
 
 | Layer | Technology |
 |---|---|
-| Backend | Java 17, Spring Boot 4.1.1, Maven |
+| Backend | Java 21, Spring Boot 4.1.1, Maven (with Virtual Threads & Lombok) |
 | Frontend | Angular 22, TypeScript, Signals, RxJS, TailwindCSS |
 | LLM | Groq API with structured responses |
 | Voice | Browser Web Speech API |

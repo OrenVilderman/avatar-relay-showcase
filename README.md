@@ -2,11 +2,11 @@
 
 > **An AI digital twin portfolio system built to demonstrate backend engineering, AI integration, reliability, and recruiter-focused UX.**
 
-[![Java 21](https://shields.io)](https://oracle.com)
-[![Spring Boot](https://shields.io)](https://spring.io)
-[![Angular 22](https://shields.io)](https://angular.dev)
-[![TypeScript](https://shields.io)](https://typescriptlang.org)
-[![Groq](https://shields.io)](https://groq.com)
+[![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.1-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Angular 22](https://img.shields.io/badge/Angular-22-DD0031?logo=angular&logoColor=white)](https://angular.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Groq](https://img.shields.io/badge/LLM-Groq-111111)](https://groq.com/)
 
 ## Source code and IP
 

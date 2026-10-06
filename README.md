@@ -305,14 +305,9 @@ This repository is intentionally lean. The public surface is organized around th
 ```text
 avatar-relay-showcase/
 ├── README.md
-├── docs/
-│   ├── architecture.md
-│   ├── api.md
-│   ├── decisions.md
-│   └── testing.md
-└── diagrams/
-    ├── system-overview.mmd
-    └── chat-avatar-sequence.mmd
+└── docs/
+    └── decisions/
+        └── ADR-008-java21-platform-modernization.md
 ```
 
 The detailed implementation remains in the private source repository.

@@ -18,6 +18,15 @@ This showcase repository exposes the engineering story without publishing the fu
 
 Source access can be provided to hiring managers and engineering interviewers on request.
 
+## Engineering decision example
+
+A small example of how I document architectural trade-offs is included here:
+
+**[ADR 008 — Java 21 Platform Modernization](docs/decisions/ADR-008-java21-platform-modernization.md)**
+
+It shows the structure I use for a real decision: context → decision → trade-offs → verification → guardrails.
+The public document intentionally focuses on the reasoning, not private implementation details.
+
 ## Executive overview
 
 AvatarRelay is a recruiter-facing AI digital twin for Oren Vilderman's backend engineering portfolio.
@@ -134,8 +143,8 @@ The goal is a voice interaction that remains predictable even when speech recogn
 
 ### 2. High-throughput I/O concurrency (Java 21 Virtual Threads)
 The backend architecture scales per-instance concurrency efficiently under I/O-heavy workloads by utilizing Java 21 Virtual Threads (`spring.threads.virtual.enabled=true`).
-- Rather than tying up heavy operating-system platform threads (which consume ~1MB each) while waiting for slow external AI API calls (Groq), the application immediately unmounts the virtual thread during the blocking network I/O window.
-- This decouples the concurrent request capacity from the server's raw memory limitations, allowing the production deployment to handle high-concurrency recruiter chat flows cleanly on resource-constrained cloud infrastructure (Render instances capped at 512MB RAM).
+- The backend keeps its blocking HTTP integration for simplicity while using Virtual Threads for I/O-heavy request execution.
+- The goal is better per-instance concurrency efficiency under high numbers of concurrent waits, not a promise of unlimited scale or unlimited memory capacity.
 
 ### 3. Bounded LLM responsibility
 

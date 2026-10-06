@@ -2,7 +2,7 @@
 
 > **An AI digital twin portfolio system built to demonstrate backend engineering, AI integration, reliability, and recruiter-focused UX.**
 
-[![Java 17](https://img.shields.io/badge/Java-17-orange?logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
+[![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk&logoColor=white)](https://www.oracle.com/java/
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.1-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Angular 22](https://img.shields.io/badge/Angular-22-DD0031?logo=angular&logoColor=white)](https://angular.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -243,7 +243,7 @@ Automated tests do not depend on live Groq or live D-ID execution. The avatar pr
 
 | Layer | Technology |
 |---|---|
-| Backend | Java 17, Spring Boot 4.1.1, Maven |
+| Backend | Java 21, Spring Boot 4.1.1, Maven (with Virtual Threads & Lombok) |
 | Frontend | Angular 22, TypeScript, Signals, RxJS, TailwindCSS |
 | LLM | Groq API with structured responses |
 | Voice | Browser Web Speech API |

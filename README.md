@@ -303,6 +303,7 @@ the design, verification strategy, limitations, and engineering
 trade-offs; the local pipeline is not runnable from the showcase
 repository itself.
 
+```mermaid
 flowchart LR
     A[Local developer] --> B[npm run pipeline]
     B --> C[Preflight and stale-port check]
@@ -314,6 +315,7 @@ flowchart LR
     G --> H{Assertions pass?}
     H -->|Yes| I[Cleanup and success]
     H -->|No| J[Cleanup and failure]
+```
 
 ## API surface
 

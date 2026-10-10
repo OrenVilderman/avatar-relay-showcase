@@ -317,6 +317,35 @@ flowchart LR
     H -->|No| J[Cleanup and failure]
 ```
 
+<a id="security-verification-layers"></a>
+
+## Security Verification Layers
+
+Security verification uses complementary checks at different boundaries. External contract tests validate observable HTTP behavior, while the internal route inventory check detects registered MVC mappings that have not been explicitly approved.
+
+| Verification Layer | Boundary Evaluated | Execution Context | Output Signal |
+| :--- | :--- | :--- | :--- |
+| **Token Check Unit Tests** | Individual interceptor component correctness | Build-time CI / Local | Validates header parsing logic isolation |
+| **Route Inventory Guard** | Live MVC mapping parity & anonymous request leaks | Build-time CI / Local | Catches undeclared controller routes and seals origin surface |
+| **Newman Contract Suite** | Black-box HTTP validation of deployed API schemas | Local pipeline automation / Live Prod Check | Verifies active schema definitions match production expectations |
+
+While external black-box contract checks (Postman/Newman) ensure that our running endpoints strictly honor documented API specifications across environments, the internal Route Inventory Guard acts as an introspective runtime backstop. It dynamically queries Spring Boot's live mappings during the test phase to prevent accidental framework endpoint exposure.
+
+### Visual Guard Indicator (Terminal Output Failure Simulation)
+
+When an undocumented controller route attempts to register on the origin server (for example, a temporary `@GetMapping("/debug/env")` endpoint), the integration test halts the pipeline and reports a targeted diagnostic mismatch:
+
+```text
+[ERROR] Failures:
+[ERROR]   RouteInventoryGuardTest.routeSetMatchesTheDeclaredInventory:97
+Route inventory mismatch:
+Undeclared route: GET /debug/env
+[INFO]
+[ERROR] Tests run: 6, Failures: 1, Errors: 0, Skipped: 0
+```
+
+The guard covers registered Spring MVC mappings, not every URL a server could serve. Keep separate negative-path checks for authorization and endpoints outside the protected namespace; neither the inventory nor a green contract suite alone proves complete security coverage.
+
 ## API surface
 
 | Method | Endpoint | Purpose |
@@ -378,6 +407,8 @@ avatar-relay-showcase/
     └── decisions/
         └── ADR-008-java21-platform-modernization.md
 ```
+
+The `docs/decisions/` directory is the public home for concise architecture decision records, following the `ADR-NNN-short-topic.md` naming convention. Add a standalone security-verification decision record there when one is warranted. Keep executable implementation tests and private gateway credentials in the private source repository; do not publish raw Java source files or live tokens in this showcase.
 
 The detailed implementation remains in the private source repository.
 

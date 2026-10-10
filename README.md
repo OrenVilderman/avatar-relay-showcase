@@ -248,6 +248,73 @@ Automated tests do not depend on live Groq or live D-ID execution. The avatar pr
 
 > Test status is intentionally not inferred from README counts. Current pass/fail status should be taken from the exact local test run or CI result for the commit being evaluated.
 
+## Local API Contract Testing (Postman + Newman)
+
+The private implementation includes a local `npm run pipeline` workflow
+that coordinates backend startup and automated API contract tests.
+
+The pipeline addresses a practical testing problem: the Spring Boot
+application takes approximately nine seconds to start in the observed
+local environment, and its Java/Tomcat process may outlive the background
+launcher. Without explicit lifecycle management, Newman can run too early
+or send requests to a stale application instance.
+
+The pipeline coordinates these stages:
+
+1. **Preflight:** Detect stale listeners on the local development port
+   before starting a new run.
+2. **Startup:** Launch Spring Boot as a background process and capture
+   its launcher PID.
+3. **Readiness:** Wait for the API to become reachable before starting
+   Newman.
+4. **API validation:** Run the Postman collection against the intended
+   API instance.
+5. **Cleanup:** Release the local server resources at the end of the run
+   and propagate startup or test failures to the pipeline result.
+
+Port cleanup is a local-development safeguard, not a production
+process-management strategy. The cleanup implementation should be
+scoped to the process owned by the pipeline and must not terminate
+unrelated applications.
+
+### Security boundary validation
+
+The deployed API has been exercised with an invalid API key, and the
+request receives an authorization rejection (`401`/`403`).
+
+This verifies one negative authorization scenario. It does not, by
+itself, establish complete security coverage.
+
+The API contract suite should explicitly distinguish:
+
+- Successful requests using valid credentials.
+- Requests with missing or invalid credentials.
+- Request-validation failures.
+- Unexpected server and upstream-provider failures.
+
+### Operational limitation
+
+The deployed service has some cold-start latency. Startup readiness,
+API correctness, and upstream-provider availability are separate
+concerns and should be diagnosed independently.
+
+The implementation remains private. This public repository documents
+the design, verification strategy, limitations, and engineering
+trade-offs; the local pipeline is not runnable from the showcase
+repository itself.
+
+flowchart LR
+    A[Local developer] --> B[npm run pipeline]
+    B --> C[Preflight and stale-port check]
+    C --> D[Start Spring Boot]
+    D --> E{API ready?}
+    E -->|No, within timeout| E
+    E -->|No, timeout| F[Fail pipeline]
+    E -->|Yes| G[Run Newman collection]
+    G --> H{Assertions pass?}
+    H -->|Yes| I[Cleanup and success]
+    H -->|No| J[Cleanup and failure]
+
 ## API surface
 
 | Method | Endpoint | Purpose |

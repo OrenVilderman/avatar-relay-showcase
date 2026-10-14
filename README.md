@@ -124,6 +124,14 @@ sequenceDiagram
 
 ```
 
+## Configurable candidate references
+
+The intent-recovery design now treats candidate identity as configuration rather than a hardcoded name. A `CandidateProperties` configuration model and `CandidateReference` normalization boundary support configured aliases and Hebrew clitic-attached forms such as "לאורן", "מהאורן", and "שאורן".
+
+The normalization is deliberately scoped to candidate references. It improves reuse and Hebrew intent recovery, but should not be confused with complete multi-tenant isolation across sessions, storage, authorization, or application data.
+
+The private implementation's reported local E2E collection has expanded to 38 Newman requests and 55 assertions, covering multi-turn behavior, candidate-reference variants, bilingual edge cases, prompt-injection/fallback guardrails, and request boundaries. The source repository remains the authority for executable tests and actual pipeline output.
+
 ## Key engineering features
 
 ### 1. Bilingual voice UX
@@ -390,6 +398,7 @@ The architecture can evolve when traffic, durability, or operational requirement
 |---|---|
 | Deterministic response layer | Keeps candidate claims grounded and responses synchronized with the avatar. |
 | Model classification instead of unrestricted answer generation | Limits hallucination surface and makes application behavior testable. |
+| Configurable candidate-reference normalization | Removes candidate-specific literals from intent recovery and handles supported Hebrew clitics with focused regression tests. |
 | Bounded retry + fallback | Improves resilience without creating unbounded retry loops. |
 | Server-owned video text | Prevents arbitrary client-controlled avatar content. |
 | Mock-first avatar provider | Keeps automated tests deterministic and avoids live provider usage. |

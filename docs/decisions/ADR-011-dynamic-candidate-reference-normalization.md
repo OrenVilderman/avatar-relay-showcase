@@ -16,7 +16,7 @@ Represent candidate names and aliases through configuration and resolve them thr
 
 Keep normalization candidate-aware and deterministic. Tests should cover both expected variants and false positives. Preserve the established intent categories and deterministic canonical-response layer.
 
-The private implementation's reported Postman/Newman collection contains 38 requests and 55 assertions. It covers multi-turn chat, candidate-reference variants, Hebrew/mixed-language edge cases, security and fallback guardrails, and request boundaries.
+The private implementation's reported Postman/Newman collection expanded from an earlier tracked baseline of 6 requests and 9 assertions to 38 requests and 55 assertions. The expanded suite covers multi-turn chat, configured candidate-reference variants, Hebrew and mixed-language edge cases, security and fallback guardrails, and request boundaries. These counts describe the reported collection size, not a guarantee that every security scenario is covered or that a particular commit passed.
 
 ## Consequences
 
@@ -34,7 +34,7 @@ The private implementation's reported Postman/Newman collection contains 38 requ
 
 ## Verification
 
-The implementation maintainer reports a green local pipeline with 148 JUnit 5 backend tests, 122 Vitest frontend tests, and 38 Newman requests / 55 assertions. These are maintainer-reported results, not independently executed by this public documentation change. For current pass/fail status, consult actual test output or CI for the implementation commit being reviewed.
+The implementation maintainer reports a local pipeline suite comprising 148 JUnit 5 backend tests, 122 Vitest frontend tests, and 38 Newman requests / 55 assertions. This documentation-only change does not independently execute or verify those tests. The counts are suite-size context, not proof of a passing run. For current pass/fail status, consult actual `npm run pipeline` output or CI for the implementation commit being reviewed.
 
 ## Guardrails
 

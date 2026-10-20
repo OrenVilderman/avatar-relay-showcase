@@ -18,14 +18,12 @@ This showcase repository exposes the engineering story without publishing the fu
 
 Source access can be provided to hiring managers and engineering interviewers on request.
 
-## Engineering decision example
+## Engineering decision examples
 
-A small example of how I document architectural trade-offs is included here:
+Two public architecture decision records show how I document context, decisions, trade-offs, verification, and guardrails without exposing private implementation details:
 
-**[ADR 008 — Java 21 Platform Modernization](docs/decisions/ADR-008-java21-platform-modernization.md)**
-
-It shows the structure I use for a real decision: context → decision → trade-offs → verification → guardrails.
-The public document intentionally focuses on the reasoning, not private implementation details.
+- **[ADR 008 - Java 21 Platform Modernization](docs/decisions/ADR-008-java21-platform-modernization.md)** covers the runtime and concurrency model.
+- **[ADR 011 - Dynamic Candidate Reference Normalization](docs/decisions/ADR-011-dynamic-candidate-reference-normalization.md)** documents configurable candidate identity, Hebrew clitic handling, and the associated regression-testing expansion.
 
 ## Executive overview
 
@@ -124,13 +122,15 @@ sequenceDiagram
 
 ```
 
-## Configurable candidate references
+## Configurable candidate references and Hebrew normalization
 
-The intent-recovery design now treats candidate identity as configuration rather than a hardcoded name. A `CandidateProperties` configuration model and `CandidateReference` normalization boundary support configured aliases and Hebrew clitic-attached forms such as "לאורן", "מהאורן", and "שאורן".
+Candidate identity is configuration-driven rather than embedded as a candidate-specific literal in intent-recovery logic. The implementation uses a `CandidateProperties` configuration model and a dedicated `CandidateReference` normalization boundary for configured names and aliases.
 
-The normalization is deliberately scoped to candidate references. It improves reuse and Hebrew intent recovery, but should not be confused with complete multi-tenant isolation across sessions, storage, authorization, or application data.
+Hebrew clitic prefixes can attach directly to a name. The supported prefix set is `ו`, `ה`, `ב`, `כ`, `ל`, `מ`, and `ש`. Examples include "לאורן", "מהאורן", and "שאורן". Matching is intended to remain candidate-aware and deterministic, with regression cases for expected variants and false positives rather than broadly stripping prefixes from arbitrary words.
 
-The private implementation's reported local E2E collection has expanded to 38 Newman requests and 55 assertions, covering multi-turn behavior, candidate-reference variants, bilingual edge cases, prompt-injection/fallback guardrails, and request boundaries. The source repository remains the authority for executable tests and actual pipeline output.
+This improves reuse and Hebrew intent recovery; it is not a claim of complete internationalization or full multi-tenant isolation. Tenant isolation still requires separate boundaries for sessions, storage, authorization, and candidate-specific application data.
+
+The private implementation's reported Postman/Newman E2E suite grew from a baseline of 6 requests and 9 assertions to 38 requests and 55 assertions. The expanded coverage targets multi-turn behavior, candidate-reference variants, Hebrew and mixed-language edge cases, prompt-injection and fallback guardrails, and request boundaries. See [ADR 011](docs/decisions/ADR-011-dynamic-candidate-reference-normalization.md). The private source repository remains the authority for executable tests and actual pipeline output.
 
 ## Key engineering features
 
@@ -235,28 +235,43 @@ The application uses bounded retries, fallback models, validation and determinis
 
 ### 7. Testing rigor
 
-Testing is designed around the actual failure surface, not only the happy path.
+Testing is designed around realistic failure modes and API contracts, not only the happy path.
 
 Coverage areas include:
 
-- request validation
+- request validation and error contracts
 - structured LLM response parsing
 - empty and malformed upstream responses
-- retry and fallback behavior
-- long Job Descriptions
-- Job Matcher validation
-- bilingual behavior
-- voice interaction state transitions
-- transport-failure degradation
+- bounded retries and fallback behavior
+- long Job Descriptions and Job Matcher response validation
+- English, Hebrew, and mixed-language behavior
+- candidate-reference normalization, including Hebrew clitic-attached names
+- multi-turn chat and context boundaries
+- voice interaction state transitions and transport-failure degradation
 - server-owned reply/video mapping
-- provider isolation
-- rate limiting and error contracts
+- provider isolation, rate limiting, and security guardrails
 
-Automated tests do not depend on live Groq or live D-ID execution. The avatar provider is mock-first, and real D-ID execution is intentionally frozen.
+The private implementation's reported regression-test shape is:
+
+| Layer | Reported coverage |
+|---|---|
+| Backend | 148 JUnit 5 tests |
+| Frontend | 122 Vitest tests across 14 files |
+| API contract | 38 Newman requests and 55 assertions |
+
+The Postman/Newman collection expanded from an earlier tracked baseline of 6 requests and 9 assertions. These counts describe reported suite size, not a pass/fail result and not proof that every security scenario is covered.
+
+Automated tests are designed not to depend on live Groq or live D-ID execution. The avatar provider is mock-first, and real D-ID execution is intentionally frozen.
 
 > Test status is intentionally not inferred from README counts. Current pass/fail status should be taken from the exact local test run or CI result for the commit being evaluated.
 
 ## Local API Contract Testing (Postman + Newman)
+
+### Collection evolution and regression scope
+
+The reported local Postman/Newman collection expanded from 6 requests and 9 assertions to 38 requests and 55 assertions. The added scenarios target multi-turn chat behavior, configurable candidate references, Hebrew clitic-attached names, bilingual edge cases, prompt-injection and fallback guardrails, and request validation.
+
+The collection provides black-box API regression coverage for the scenarios represented in its requests. Its size alone does not prove complete security coverage, and the counts do not imply that the current commit passed. Use the actual `npm run pipeline` output or CI result from the private implementation repository to confirm pass/fail status.
 
 The private implementation includes a local `npm run pipeline` workflow
 that coordinates backend startup and automated API contract tests.
@@ -399,6 +414,7 @@ The architecture can evolve when traffic, durability, or operational requirement
 | Deterministic response layer | Keeps candidate claims grounded and responses synchronized with the avatar. |
 | Model classification instead of unrestricted answer generation | Limits hallucination surface and makes application behavior testable. |
 | Configurable candidate-reference normalization | Removes candidate-specific literals from intent recovery and handles supported Hebrew clitics with focused regression tests. |
+| Expanded Postman/Newman E2E suite | Grew from 6 requests / 9 assertions to 38 requests / 55 assertions, adding regression coverage for multi-turn behavior, Hebrew candidate references, fallback policies, and request boundaries. |
 | Bounded retry + fallback | Improves resilience without creating unbounded retry loops. |
 | Server-owned video text | Prevents arbitrary client-controlled avatar content. |
 | Mock-first avatar provider | Keeps automated tests deterministic and avoids live provider usage. |
@@ -414,10 +430,11 @@ avatar-relay-showcase/
 ├── README.md
 └── docs/
     └── decisions/
-        └── ADR-008-java21-platform-modernization.md
+        ├── ADR-008-java21-platform-modernization.md
+        └── ADR-011-dynamic-candidate-reference-normalization.md
 ```
 
-The `docs/decisions/` directory is the public home for concise architecture decision records, following the `ADR-NNN-short-topic.md` naming convention. Add a standalone security-verification decision record there when one is warranted. Keep executable implementation tests and private gateway credentials in the private source repository; do not publish raw Java source files or live tokens in this showcase.
+The `docs/decisions/` directory is the public home for concise architecture decision records, following the `ADR-NNN-short-topic.md` naming convention. ADR 011 documents configurable candidate references, Hebrew clitic normalization, and the reported expansion of the Postman/Newman regression suite. Keep executable implementation tests and private gateway credentials in the private source repository; do not publish raw Java source files or live tokens in this showcase.
 
 The detailed implementation remains in the private source repository.
 
